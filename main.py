@@ -1,9 +1,9 @@
-from hive import Hive, loss_function
+from hive import Hive
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.signal
 import time
-import random
+
 
 def render_path(terrain, path):
     x, y = zip(*path)
