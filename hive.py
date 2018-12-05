@@ -3,6 +3,7 @@ import random
 import itertools
 
 
+# формируем опорные точки случайным образом, между позицией робота и позицией цели
 def control_points(start_pos, target_pos):
     n_control_points = round(random.gammavariate(3, 2))
     ctrl_points = [start_pos]
@@ -21,6 +22,7 @@ def control_points(start_pos, target_pos):
     return ctrl_points
 
 
+# формируем промежуточные точки между start_pos и target_pos
 def intermediate_steps(p1, p2):
     sign_x = np.sign(p2[0] - p1[0])
     sign_y = np.sign(p2[1] - p1[1])
@@ -43,6 +45,7 @@ def intermediate_steps(p1, p2):
         i += 1
 
 
+# формируем полный путь по начальной, промежуточный и конечной точками
 def build_path(solution):
     path = []
     prev_point = solution[0]
@@ -53,6 +56,8 @@ def build_path(solution):
     return path
 
 
+# рассчитываем насколько хорошо путь подходит
+# учитывается расстояние, пройденное роботом (длинна пути) и 'штраф' за пересечение 'гор'
 def loss_function(path, terrain):
     terrain_drop = 0
     prev_point = path[0]
@@ -63,6 +68,8 @@ def loss_function(path, terrain):
     return terrain_drop*100 + len(path)*0.1
 
 
+# модифицируем оторную точку в пути
+# это может улучшить или ухудшить качество пути
 def modify_point_axes(x_old, search_neighborhood, axes_size):
     dx = np.random.randint(-search_neighborhood, search_neighborhood)
     guess_x = x_old + dx
@@ -83,6 +90,7 @@ class Solution:
         self.path = build_path(self.points)
         self.fitness = loss_function(self.path, self.terrain)
 
+    # получаем новое решение, у которого немного иземены координаты опорных точек
     def modified_solution(self):
         points = self.points.copy()
 
@@ -100,7 +108,13 @@ class Solution:
 
 
 class Hive:
-
+    # n_scouts - кол-во пчел-разведчиков
+    # n_elite - кол-во элитных решений
+    # n_bees_elite - кол-во пчел для каждого элитного решения
+    # n_bees_others - кол-во пчел для остальных решений
+    # search_neighborhood - кол-во ячеек, в пределах которых можно изменять опорную точку
+    # terrain - ландшафт
+    # pos - позиция улея
     def __init__(self, n_scouts, n_points, n_elite, n_bees_elite, n_bees_others, search_neighborhood, terrain,
                  pos):
         self.n_scouts = n_scouts
@@ -112,6 +126,7 @@ class Hive:
         self.terrain = terrain
         self.pos = pos
 
+    # найти наилучший путь к ячейке с позицией target_pos за n_iters
     def find(self, target_pos, n_iters):
         best = None
         for i in range(n_iters):
@@ -123,6 +138,9 @@ class Hive:
 
         return best
 
+    # после нахождения рандомных путей разведчиками,
+    # производим локальный поиск над лучшими найденными путями,
+    # возможно получится улучшить результат разведчика
     def local_search(self, solutions):
         elite_solutions = solutions[:self.n_elite]
         #  others_solutions = solutions[self.n_elite:self.n_points]
@@ -138,6 +156,11 @@ class Hive:
         elite_solutions.sort(key=lambda s: s.fitness)
         return elite_solutions
 
+    # результаты пазведчиков
+    # Любой путь потенциально пригодный,
+    # потому что мы знаем позицию улея (робота) и позицию цели
+    # и строим промежуточные точки между этими ячейками.
+    # Лучший путь - это кратчайший, не 'наезжающий' на горы
     def scouts_solutions(self, target_pos):
         solutions = []
         for i in range(self.n_scouts):

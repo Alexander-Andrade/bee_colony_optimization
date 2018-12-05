@@ -13,8 +13,7 @@ def render_path(terrain, path):
 
 
 if __name__ == '__main__':
-    # np.random.seed(0)
-    # random.seed(0)
+    # формируем случайный ландшафт,'низины' выравниваем, оставляем только 'горы'
     terrain = np.random.uniform(0, 1.0, (40, 40))
     terrain = np.where(terrain > 0.7, terrain, 0)
     terrain = scipy.signal.medfilt2d(terrain)
